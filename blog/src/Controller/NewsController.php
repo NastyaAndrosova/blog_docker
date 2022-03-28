@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use DateTime;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -38,7 +39,11 @@ class NewsController extends AbstractController
         $tags = $request->get('tags');
         $date = $request->get('date');
 
-        $filteredData = $this->newsRepository->getFilteredNews($page, $pageSize, $date, $tags);
+        if (!$this->dateValidation($date) && $date) {
+            throw new \Exception('date is wrong');
+        }
+
+        $filteredData = $this->newsRepository->getFilteredNews($page, $pageSize, $date, (string) $tags);
 
         $jsonContent = $serializer->serialize($filteredData, 'json');
         var_dump($filteredData);
@@ -46,5 +51,11 @@ class NewsController extends AbstractController
             'message' => 'Ok',
             'data' => $jsonContent,
         ]);
+    }
+
+    private function dateValidation($date, $format = 'Y-m')
+    {
+        $dt = DateTime::createFromFormat($format, $date);
+        return $dt && $dt->format($format) === $date;
     }
 }
